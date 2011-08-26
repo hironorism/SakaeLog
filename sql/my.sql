@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS `member` (
     name VARCHAR(256) NOT NULL,
     display_name VARCHAR(256) NOT NULL,
     is_active TINYINT UNSIGNED NOT NULL DEFAULT 1,
+    is_kenkyuusei TINYINT UNSIGNED NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL
 ) ENGINE=InnoDB;
@@ -51,3 +52,4 @@ INSERT INTO `blog_rotation` (member_id, sort, created_at) VALUES
 (55, 7, NOW()),
 (56, 8, NOW()),
 (57, 9, NOW());
+
