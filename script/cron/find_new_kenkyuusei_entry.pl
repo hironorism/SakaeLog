@@ -71,6 +71,6 @@ sub find_new_entry {
                     WHEN sort = ? AND turn = 1 THEN 0 
                     WHEN sort = ? AND turn = 0 THEN 1 
                  ELSE turn END,
-    }, undef, ($last, $next));
+    }, ($last, $next));
 }
 __END__
