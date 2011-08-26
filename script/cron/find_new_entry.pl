@@ -21,7 +21,10 @@ my $ske = scraper {
 
 my $dbh = Amon2::DBI->connect('dbi:mysql:ske:127.0.0.1:3306', 'root', '');
 #--------------------------------------------------------------------------
-my $members = $dbh->selectall_arrayref(q{ SELECT member.id, member.name FROM member }, undef, { Columns => +{}});
+my $members = $dbh->selectall_arrayref(
+    q{ SELECT member.id, member.name FROM member WHERE is_kenkyuusei = 0 }, 
+    { Columns => +{}}
+); 
 
 main() unless caller;
 
@@ -33,27 +36,30 @@ sub find_new_entry {
     
     my @data = ();
     my $cv = AnyEvent->condvar;
-    for my $member (@{ $list->{members} }) {
-        my ($name)            = $member->{link} =~ /\?writer=(.*)$/;
-        my $blog_update_time  = $member->{blog_update_time};
-        next if ($name eq 'secretariat' || $name eq 'kenkyuusei');
+    for my $member (@{ $members }) {
+
+        my $name     = $member->{name};
+        my $blog_url = sprintf($url, $name);
     
         $cv->begin;
-        http_get "$member->{link}", sub {
+        http_get $blog_url, sub {
             my ($data, $headers) = @_;
             my $tree = HTML::TreeBuilder::XPath->new;
     
             $tree->parse( $data );
-            my @items   = $tree->findnodes( '//div[@class="box clearfix"]' );
-            my $length  = length( decode_utf8 $items[0]->as_text );
-    
-            my $info = $dbh->selectrow_hashref(q{ SELECT id FROM member WHERE name = ? }, undef, ($name) );
+            my @items1   = $tree->findnodes( '//div[@id="sectionMain"]/div[@class="unitBlog"]/h3') or warn $blog_url;
+            my @items2   = $tree->findnodes( '//div[@id="sectionMain"]/div[@class="unitBlog"]/div[@class="box clearfix"]/h3' ) or warn $blog_url;
+            my @items3   = $tree->findnodes( '//div[@id="sectionMain"]/div[@class="unitBlog"]/div[@class="box clearfix"]' ) or warn $blog_url;
+            
+            my $blog_update_time = $items1[0]->as_text;
+            my $title            = $items2[0]->as_text;
+            my $body             = $items3[0]->as_text;
     
             my @blogs = $dbh->selectrow_array(q{
                  SELECT id 
                    FROM blog_update_history 
                   WHERE member_id = ? AND blog_update_time = ? 
-            }, undef, ($info->{id}, $blog_update_time));
+            }, undef, ($member->{id}, $blog_update_time));
     
             # not updated
             if (@blogs) {
@@ -64,8 +70,9 @@ sub find_new_entry {
     
             # updated
             $dbh->insert('blog_update_history', {
-                'member_id'        => $info->{id}, 
-                'length'           => $length,
+                'member_id'        => $member->{id}, 
+                 'title'            => $title,
+                'body'             => $body,
                 'blog_update_time' => $blog_update_time,
                 'created_at'       => SQL::Interp::sql('NOW()'),
             });
