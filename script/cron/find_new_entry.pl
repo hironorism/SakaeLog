@@ -23,7 +23,7 @@ my $dbh = Amon2::DBI->connect('dbi:mysql:ske:127.0.0.1:3306', 'root', '');
 #--------------------------------------------------------------------------
 my $members = $dbh->selectall_arrayref(
     q{ SELECT member.id, member.name FROM member WHERE is_kenkyuusei = 0 }, 
-    { Columns => +{}}
+    { Columns => +{} }
 ); 
 
 main() unless caller;
@@ -37,7 +37,7 @@ sub find_new_entry {
     my @data = ();
     my $cv = AnyEvent->condvar;
     for my $member (@{ $members }) {
-
+   
         my $name     = $member->{name};
         my $blog_url = sprintf($url, $name);
     
@@ -47,9 +47,9 @@ sub find_new_entry {
             my $tree = HTML::TreeBuilder::XPath->new;
     
             $tree->parse( $data );
-            my @items1   = $tree->findnodes( '//div[@id="sectionMain"]/div[@class="unitBlog"]/h3') or warn $blog_url;
-            my @items2   = $tree->findnodes( '//div[@id="sectionMain"]/div[@class="unitBlog"]/div[@class="box clearfix"]/h3' ) or warn $blog_url;
-            my @items3   = $tree->findnodes( '//div[@id="sectionMain"]/div[@class="unitBlog"]/div[@class="box clearfix"]' ) or warn $blog_url;
+            my @items1 = $tree->findnodes( '//div[@id="sectionMain"]/div[@class="unitBlog"]/h3' );
+            my @items2 = $tree->findnodes( '//div[@id="sectionMain"]/div[@class="unitBlog"]/div[@class="box clearfix"]/h3' );
+            my @items3 = $tree->findnodes( '//div[@id="sectionMain"]/div[@class="unitBlog"]/div[@class="box clearfix"]' );
             
             my $blog_update_time = $items1[0]->as_text;
             my $title            = $items2[0]->as_text;
@@ -59,7 +59,7 @@ sub find_new_entry {
                  SELECT id 
                    FROM blog_update_history 
                   WHERE member_id = ? AND blog_update_time = ? 
-            }, undef, ($member->{id}, $blog_update_time));
+            }, {}, ($member->{id}, $blog_update_time));
     
             # not updated
             if (@blogs) {

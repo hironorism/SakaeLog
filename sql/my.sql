@@ -42,14 +42,15 @@ CREATE TABLE IF NOT EXISTS `blog_rotation` (
     INDEX(member_id)
 ) ENGINE=InnoDB;
 
-INSERT INTO `blog_rotation` (member_id, sort, created_at) VALUES 
-(49, 1, NOW()),
-(50, 2, NOW()),
-(51, 3, NOW()),
-(52, 4, NOW()),
-(53, 5, NOW()),
-(54, 6, NOW()),
-(55, 7, NOW()),
-(56, 8, NOW()),
-(57, 9, NOW());
+-- turnはとりあえず
+INSERT INTO `blog_rotation` (member_id, turn, sort, created_at) VALUES 
+(49, 0, 1, NOW()),
+(50, 0, 2, NOW()),
+(51, 0, 3, NOW()),
+(52, 0, 4, NOW()),
+(53, 0, 5, NOW()),
+(54, 0, 6, NOW()),
+(55, 0, 7, NOW()),
+(56, 0, 8, NOW()),
+(57, 1, 9, NOW());
 

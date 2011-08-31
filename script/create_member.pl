@@ -46,3 +46,4 @@ for my $member (@{ $list->{members} }) {
         'created_at'   => SQL::Interp::sql('NOW()'),
     });
 }
+

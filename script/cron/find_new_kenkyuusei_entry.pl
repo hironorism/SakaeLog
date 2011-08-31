@@ -49,7 +49,7 @@ sub find_new_entry {
          SELECT id 
            FROM blog_update_history 
           WHERE member_id = ? AND blog_update_time = ? 
-    }, undef, ($next_member->{id}, $blog_update_time));
+    }, {}, ($next_member->{id}, $blog_update_time));
 
     # not updated
     if (@blogs) {
@@ -66,11 +66,10 @@ sub find_new_entry {
     });
 
     $dbh->do(q{
-        UPDATE blog_rotation SET 
-          turn = CASE 
+        UPDATE blog_rotation SET turn = CASE 
                     WHEN sort = ? AND turn = 1 THEN 0 
                     WHEN sort = ? AND turn = 0 THEN 1 
-                 ELSE turn END,
-    }, ($last, $next));
+                 ELSE turn END
+    }, {}, ($last, $next));
 }
 __END__

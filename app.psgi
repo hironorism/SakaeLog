@@ -11,6 +11,7 @@ use Text::Xslate::Util qw(mark_raw);
 use JSON;
 use Data::Rmap qw();
 use Scalar::Util qw(blessed);
+use POSIX qw(strftime); 
 
 __PACKAGE__->load_plugins('DBI');
 
@@ -45,27 +46,85 @@ sub config {
 }
 
 #-----------------------------------------------------------------------------------------------------
-get '/' => sub {
-    my $c = shift;
+sub get_chacters_ranking {
+    my ($dbh, @params) = @_;
 
-#    my $member = $c->dbh->selectall_arrayref(q{ SELECT * FROM member }, { Columns => +{} });
-    my $members = $c->dbh->selectall_arrayref(q{
-        SELECT display_name, LENGTH(body) AS body_length 
+    my $res = $dbh->selectall_arrayref(q{
+        SELECT display_name, SUM( LENGTH(body) ) AS number_of_characters 
           FROM member
           JOIN blog_update_history ON blog_update_history.member_id = member.id
-         ORDER BY body_length DESC
-    }, { Columns => +{} });
+         WHERE blog_update_time >= ? AND blog_update_time < ?
+         GROUP BY member.id 
+         ORDER BY number_of_characters ASC
+    }, { Columns => +{} }, @params);
 
-    my $name        = [ map { $_->{display_name} } @$members ];
-    my $body_length = [ map { $_->{body_length} } @$members ];
+    return {
+        name  => [ map { $_->{display_name} } @$res ],
+        value => [ map { $_->{number_of_characters}  } @$res ],
+    };
+}
 
+sub get_updates_ranking {
+    my ($dbh, @params) = @_;
 
-    my $vars   = { 
-        name        => $name,
-        body_length => $body_length,
+    # 更新数ランキング
+    my $res = $dbh->selectall_arrayref(q{
+        SELECT display_name, COUNT( member.id ) AS number_of_updates
+          FROM member
+          JOIN blog_update_history ON blog_update_history.member_id = member.id
+         WHERE blog_update_time >= ? AND blog_update_time < ?
+         GROUP BY member.id 
+         ORDER BY number_of_updates ASC
+    }, { Columns => +{} }, @params);
+
+    return {
+        name  => [ map { $_->{display_name} } @$res ],
+        value => [ map { $_->{number_of_updates} } @$res ],
+    };
+}
+
+#-----------------------------------------------------------------------------------------------------
+
+# daily
+get '/{date:([0-9]{4}/[0-9]{2}/[0-9]{2})?}' => sub {
+    my ($c, $args) = @_;
+
+use Data::Dumper;warn Dumper $args;
+    my $start = strftime('%Y-%m-%d 02:00:00', localtime());
+    my $end   = strftime('%Y-%m-%d 02:00:00', localtime( time() + 60*60*24 ));
+
+    my @params = ($start, $end);
+    my $number_of_characters = get_chacters_ranking($c->dbh, @params);
+    my $number_of_updates    = get_updates_ranking($c->dbh, @params);
+
+    my $vars   = {
+        number_of_characters => $number_of_characters,
+        number_of_updates    => $number_of_updates,
     };
 
     return $c->render('index.tt', $vars);
+};
+
+
+# monthly
+get '/:year/:month' => sub {
+    my ($c, $args) = @_;
+
+use Data::Dumper;warn Dumper $args;
+    my $start = strftime('%Y-%m-%d 02:00:00', localtime());
+    my $end   = strftime('%Y-%m-%d 02:00:00', localtime( time() + 60*60*24 ));
+
+    my @params = ($start, $end);
+    my $number_of_characters = get_chacters_ranking($c->dbh, @params);
+    my $number_of_updates    = get_updates_ranking($c->dbh, @params);
+
+    my $vars   = {
+        number_of_characters => $number_of_characters,
+        number_of_updates    => $number_of_updates,
+    };
+
+    return $c->render('index.tt', $vars);
+
 };
 
 #-----------------------------------------------------------------------------------------------------
@@ -127,15 +186,16 @@ __DATA__
 
     $(document).ready(function(){
 
-        var name = $.map([% name | json %], function(v,i) {
+        var name1 = $.map([% number_of_characters.name | json %], function(v,i) {
             return v.unescapeHTMLx();
         });
-        var body_length = [% body_length | json %];
 
-        // For horizontal bar charts, x an y values must will be "flipped"
-        // from their vertical bar counterpart.
+        var value1 = $.map([% number_of_characters.value | json %], function(v,i) {
+            return parseInt(v);
+        });
+
         var plot1 = $.jqplot('chart1', [ 
-                body_length 
+               value1 
             ], {
             seriesDefaults: {
                 renderer:$.jqplot.BarRenderer,
@@ -148,7 +208,33 @@ __DATA__
             axes: {
                 yaxis: {
                     renderer: $.jqplot.CategoryAxisRenderer,
-                    ticks: name,
+                    ticks: name1,
+                }
+            }
+        });
+
+        var name2 = $.map([% number_of_updates.name | json %], function(v,i) {
+            return v.unescapeHTMLx();
+        });
+
+        var value2 = $.map([% number_of_updates.value | json %], function(v,i) {
+            return parseInt(v);
+        });
+        var plot2 = $.jqplot('chart2', [ 
+               value2 
+            ], {
+            seriesDefaults: {
+                renderer:$.jqplot.BarRenderer,
+                pointLabels: { show: true, location: 'e', edgeTolerance: -15 },
+                shadowAngle: 130,
+                rendererOptions: {
+                    barDirection: 'horizontal'
+                },
+            },
+            axes: {
+                yaxis: {
+                    renderer: $.jqplot.CategoryAxisRenderer,
+                    ticks: name2,
                 }
             }
         });
@@ -158,11 +244,18 @@ __DATA__
 .jqplot-yaxis-tick {
     width: 80px;
 }
+.chart2 {
+    position: absolute;
+    position-left: 600px;
+}
 </style>
 </head>
 <body>
-    SakaeLog
 
+    文字数<br />
     <div id="chart1" style="height:1500px;width:500px; "></div>
+
+    更新回数<br />
+    <div id="chart2" style="height:1500px;width:500px; "></div>
 </body>
 </html>
