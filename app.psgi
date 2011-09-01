@@ -15,13 +15,16 @@ use POSIX qw(strftime);
 
 __PACKAGE__->load_plugins('DBI');
 
+open my $fh, "<", "../environment.json" or die $!;
+my $env = JSON::decode_json(join '', <$fh>);
+
 # put your configuration here
 sub config {
     +{
         'DBI' => [
-            'dbi:mysql:ske:localhost:3306',
-            'root',
-            '',
+            "dbi:mysql:ske:$env->{DOTCLOUD_DB_MYSQL_HOST}:$env->{DOTCLOUD_DB_MYSQL_PORT}",
+            $env->{DOTCLOUD_DB_MYSQL_LOGIN},
+            $env->{DOTCLOUD_DB_MYSQL_PASSWORD},
         ],
         'Text::Xslate' => {
             function => {

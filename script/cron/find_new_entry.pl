@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use utf8;
 use URI;
+use JSON;
 use Encode;
 use Web::Scraper;
 use AnyEvent::HTTP;
@@ -19,7 +20,14 @@ my $ske = scraper {
     };
 };
 
-my $dbh = Amon2::DBI->connect('dbi:mysql:ske:127.0.0.1:3306', 'root', '');
+open my $fh, "<", "../../../environment.json" or die $!;
+my $env = JSON::decode_json(join '', <$fh>);
+my $dbh =  Amon2::DBI->connect(
+    "dbi:mysql:ske:$env->{DOTCLOUD_DB_MYSQL_HOST}:$env->{DOTCLOUD_DB_MYSQL_PORT}",
+    $env->{DOTCLOUD_DB_MYSQL_LOGIN},
+    $env->{DOTCLOUD_DB_MYSQL_PASSWORD},
+);
+
 #--------------------------------------------------------------------------
 my $members = $dbh->selectall_arrayref(
     q{ SELECT member.id, member.name FROM member WHERE is_kenkyuusei = 0 }, 
