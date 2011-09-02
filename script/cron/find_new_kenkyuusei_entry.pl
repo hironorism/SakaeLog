@@ -18,12 +18,13 @@ my $ske = scraper {
     };
 };
 
-open my $fh, "<", "../../../environment.json" or die $!;
+my $file = -e "/home/dotcloud/environment.json" ? "/home/dotcloud/environment.json" : "../../development.json";
+open my $fh, "<", $file or die $!;
 my $env = JSON::decode_json(join '', <$fh>);
 my $dbh =  Amon2::DBI->connect(
-    "dbi:mysql:ske:$env->{DOTCLOUD_DB_MYSQL_HOST}:$env->{DOTCLOUD_DB_MYSQL_PORT}",
-    $env->{DOTCLOUD_DB_MYSQL_LOGIN},
-    $env->{DOTCLOUD_DB_MYSQL_PASSWORD},
+    "dbi:mysql:ske:$env->{DOTCLOUD_DATA_MYSQL_HOST}:$env->{DOTCLOUD_DATA_MYSQL_PORT}",
+    $env->{DOTCLOUD_DATA_MYSQL_LOGIN},
+    $env->{DOTCLOUD_DATA_MYSQL_PASSWORD},
 );
 my $kenkyuusei = $dbh->selectall_hashref(q{
     SELECT member.id, member.name, blog_rotation.sort, blog_rotation.turn
