@@ -1,0 +1,3 @@
+*/3 * * * *  /home/dotcloud/code/SakaeLog/script/cron/find_new_entry.pl
+* 2 * * *    /home/dotcloud/code/SakaeLog/script/cron/find_new_kenkyuusei_entry.pl
+
