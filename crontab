@@ -1,6 +1,9 @@
 PATH="/home/dotcloud/perl5/bin:/opt/perl5/perls/current/bin"
 PERL5LIB=/home/dotcloud/perl5/lib/perl5
 
-*/3 * * * *  perl /home/dotcloud/code/SakaeLog/script/cron/find_new_entry.pl
-* 2 * * *    perl /home/dotcloud/code/SakaeLog/script/cron/find_new_kenkyuusei_entry.pl
+# regular
+*/3 5-23,0-2 * * *  perl /home/dotcloud/code/SakaeLog/script/cron/find_new_entry.pl
+
+# kenkyuusei
+* 2 * * *   perl /home/dotcloud/code/SakaeLog/script/cron/find_new_kenkyuusei_entry.pl
 
