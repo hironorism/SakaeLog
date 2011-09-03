@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use utf8;
 use URI;
+use JSON;
 use Encode;
 use Web::Scraper;
 use List::Util qw/max/;
@@ -18,7 +19,14 @@ my $ske = scraper {
     };
 };
 
-my $dbh = Amon2::DBI->connect('dbi:mysql:ske:127.0.0.1:3306', 'root', '');
+my $file = -e "/home/dotcloud/environment.json" ? "/home/dotcloud/environment.json" : "../../development.json";
+open my $fh, "<", $file or die $!;
+my $env = JSON::decode_json(join '', <$fh>);
+my $dbh =  Amon2::DBI->connect(
+    "dbi:mysql:ske:$env->{DOTCLOUD_DATA_MYSQL_HOST}:$env->{DOTCLOUD_DATA_MYSQL_PORT}",
+    $env->{DOTCLOUD_DATA_MYSQL_LOGIN},
+    $env->{DOTCLOUD_DATA_MYSQL_PASSWORD},
+);
 my $kenkyuusei = $dbh->selectall_hashref(q{
     SELECT member.id, member.name, blog_rotation.sort, blog_rotation.turn
       FROM member 

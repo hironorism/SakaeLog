@@ -1,3 +1,5 @@
+SET character_set_server = utf8;
+SET character_set_database = utf8;
 CREATE DATABASE IF NOT EXISTS ske DEFAULT CHARACTER SET utf8;
 
 /*
@@ -52,5 +54,5 @@ INSERT INTO `blog_rotation` (member_id, turn, sort, created_at) VALUES
 (54, 0, 6, NOW()),
 (55, 0, 7, NOW()),
 (56, 0, 8, NOW()),
-(57, 1, 9, NOW());
+(57, 0, 9, NOW());
 
