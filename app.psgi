@@ -12,6 +12,7 @@ use JSON;
 use Data::Rmap qw();
 use Scalar::Util qw(blessed);
 use POSIX qw(strftime); 
+$EVN{TZ} = 'Asia/Tokyo';
 
 __PACKAGE__->load_plugins('DBI');
 
