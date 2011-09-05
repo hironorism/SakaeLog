@@ -1,9 +1,10 @@
+TZ=JST-9
 PATH="/home/dotcloud/perl5/bin:/opt/perl5/perls/current/bin"
 PERL5LIB=/home/dotcloud/perl5/lib/perl5
 
 # regular
-*/3 5-23,0-2 * * *  perl /home/dotcloud/code/SakaeLog/script/cron/find_new_entry.pl
+*/3 14-23,0-11 * * *  perl /home/dotcloud/code/SakaeLog/script/cron/find_new_entry.pl
 
 # kenkyuusei
-* 2 * * *   perl /home/dotcloud/code/SakaeLog/script/cron/find_new_kenkyuusei_entry.pl
+00 11 * * *   perl /home/dotcloud/code/SakaeLog/script/cron/find_new_kenkyuusei_entry.pl
 
