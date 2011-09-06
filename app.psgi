@@ -12,6 +12,8 @@ use JSON;
 use Data::Rmap qw();
 use Scalar::Util qw(blessed);
 use POSIX qw(strftime); 
+use Time::Piece;
+use Time::Local;
 $ENV{TZ} = 'Asia/Tokyo';
 
 __PACKAGE__->load_plugins('DBI');
@@ -65,7 +67,7 @@ sub get_chacters_ranking {
 
     return {
         name  => [ map { $_->{display_name} } @$res ],
-        value => [ map { $_->{number_of_characters}  } @$res ],
+        value => [ map { $_->{number_of_characters} || 0  } @$res ],
     };
 }
 
@@ -84,7 +86,43 @@ sub get_updates_ranking {
 
     return {
         name  => [ map { $_->{display_name} } @$res ],
-        value => [ map { $_->{number_of_updates} } @$res ],
+        value => [ map { $_->{number_of_updates} || 0 } @$res ],
+    };
+}
+
+sub date_info {
+    my $time = scalar @_ == 3 ? timelocal(0,0,0,$_[2],$_[1]-1,$_[0]-1900) : time();
+
+    my $tp = localtime( $time );
+    my $next_month_tp = $tp->add_month(1);
+    my $prev_month_tp = $tp->add_month(-1);
+
+    my $next_day_tp = $tp + 60*60*24;
+    my $prev_day_tp = $tp - 60*60*24;
+
+    return {
+        # 次の月/前の月 
+        next_month_tp       =>
+        next_month_of_year  =>
+        next_month_of_month =>
+        prev_month_tp       =>
+        prev_month_of_year  =>
+        prev_month_of_month =>
+    
+        # 次の日/前の日
+        next_day_tp         =>
+        next_day_of_year    =>
+        next_day_of_month   =>
+        next_day_of_day     =>
+        prev_day_tp         =>
+        prev_day_of_year    =>
+        prev_day_of_month   =>
+        prev_day_of_day     =>
+    
+        current_tp          =>
+        current_year        =>
+        current_month       =>
+        current_day         =>
     };
 }
 
@@ -93,16 +131,28 @@ sub get_updates_ranking {
 # daily
 get '/{date:([0-9]{4}/[0-9]{2}/[0-9]{2})?}' => sub {
     my ($c, $args) = @_;
+    my ($year, $month, $day) = split m!/!, $args->{date};
+warn "$year/$month/$day";
 
-use Data::Dumper;warn Dumper $args;
-    my $start = strftime('%Y-%m-%d 02:00:00', localtime());
-    my $end   = strftime('%Y-%m-%d 02:00:00', localtime( time() + 60*60*24 ));
+    my $time  = $args->{date} ? timelocal(0,0,0,$day,$month-1,$year-1900) : time(); 
 
-    my @params = ($start, $end);
+    my $current_tp = localtime( $time );
+    my $next_tp    = $current_tp + 60*60*24;
+    my $prev_tp    = $current_tp - 60*60*24;
+
+    my $start_date = $current_tp->strftime('%Y-%m-%d 02:00:00');
+    my $end_date   = $next_tp->strftime('%Y-%m-%d 02:00:00');
+
+    my @params = ($start_date, $end_date);
     my $number_of_characters = get_chacters_ranking($c->dbh, @params);
     my $number_of_updates    = get_updates_ranking($c->dbh, @params);
 
     my $vars   = {
+        next_date    => $next_tp->ymd('/'),
+        prev_date    => $prev_tp->ymd('/'),
+        current_date => strftime('%Y-%m-%d %H:%M:%S', localtime()),
+        start_date   => $start_date,
+        end_date     => $end_date,
         number_of_characters => $number_of_characters,
         number_of_updates    => $number_of_updates,
     };
@@ -112,18 +162,27 @@ use Data::Dumper;warn Dumper $args;
 
 
 # monthly
-get '/:year/:month' => sub {
+get '/{year:[0-9]{4}}/{month:[0-9]{2}}' => sub {
     my ($c, $args) = @_;
 
-use Data::Dumper;warn Dumper $args;
-    my $start = strftime('%Y-%m-%d 02:00:00', localtime());
-    my $end   = strftime('%Y-%m-%d 02:00:00', localtime( time() + 60*60*24 ));
+    my $year  = $args->{year};
+    my $month = $args->{month} + 1;
+    if ($args->{month}  == 12) {
+        $year  = $args->{year} + 1;
+        $month = 1;
+    }
+    my $time  = timelocal(0,0,0,1,$args->{month}-1,$args->{year}-1900); 
+    my $start = sprintf("%04d-%02d-01 02:00:00", $args->{year}, $args->{month});
+    my $end   = sprintf("%04d-%02d-01 02:00:00", $year, $month);
 
     my @params = ($start, $end);
     my $number_of_characters = get_chacters_ranking($c->dbh, @params);
     my $number_of_updates    = get_updates_ranking($c->dbh, @params);
 
     my $vars   = {
+        current_date => strftime('%Y-%m-%d %H:%M:%S', localtime()),
+        start_date => $start,
+        end_date   => $end,
         number_of_characters => $number_of_characters,
         number_of_updates    => $number_of_updates,
     };
