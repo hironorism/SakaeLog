@@ -6,7 +6,7 @@ use URI;
 use JSON;
 use Encode;
 use Web::Scraper;
-use List::Util qw/max/;
+use List::Util qw/max min/;
 use Amon2::DBI;
 use Data::Dumper;
 
@@ -56,11 +56,12 @@ sub find_new_entry {
     my @blogs = $dbh->selectrow_array(q{
          SELECT id 
            FROM blog_update_history 
-          WHERE member_id = ? AND blog_update_time = ? 
-    }, {}, ($next_member->{id}, $blog_update_time));
+          WHERE blog_update_time = ? 
+    }, {}, ($blog_update_time));
 
     # not updated
     if (@blogs) {
+        warn 'not updated.';
         return;
     }
 
@@ -77,7 +78,10 @@ sub find_new_entry {
         UPDATE blog_rotation SET turn = CASE 
                     WHEN sort = ? AND turn = 1 THEN 0 
                     WHEN sort = ? AND turn = 0 THEN 1 
-                 ELSE turn END
-    }, {}, ($last, $next));
+                ELSE turn END,
+                updated_at = CASE 
+                    WHEN sort IN (?,?) THEN NOW()  
+                ELSE updated_at END
+    }, {}, ($last, $next, $last, $next));
 }
 __END__
