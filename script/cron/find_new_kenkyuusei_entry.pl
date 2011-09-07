@@ -53,11 +53,13 @@ sub find_new_entry {
     my $next = (!$last || $last == $max) ? 1 : $last + 1;
     my $next_member = $kenkyuusei->{ $next }; 
 
-    my @blogs = $dbh->selectrow_array(q{
+    my @member_ids = ();
+    my $bind_params = join ',', map { push @member_ids, $kenkyuusei->{$_}{id}; '?' } %$kenkyuusei;
+    my @blogs = $dbh->selectrow_array(qq{
          SELECT id 
            FROM blog_update_history 
-          WHERE blog_update_time = ? 
-    }, {}, ($blog_update_time));
+          WHERE member_id IN ($bind_params) AND blog_update_time = ? 
+    }, {}, (@member_ids, $blog_update_time));
 
     # not updated
     if (@blogs) {
