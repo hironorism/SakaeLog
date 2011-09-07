@@ -69,6 +69,11 @@
                 },
             },
             axes: {
+                xaxis: {
+                    max: 35, 
+                    pad: 1.06,
+                    ticks: [0,5,10,15,20,25,30,35],
+                },
                 yaxis: {
                     renderer: $.jqplot.CategoryAxisRenderer,
                     ticks: name2,
@@ -81,20 +86,28 @@
 .jqplot-yaxis-tick {
     width: 80px;
 }
-.chart2 {
-    position: absolute;
-    position-left: 600px;
+#number_of_characters {
+    float: left;
+}
+#number_of_updates {
+    margin-left: 600px;
 }
 </style>
 </head>
 <body>
 [% current_date %]<br />
-<a href="/[% prev_date %]">前の日</a> | <a href="/[% next_date %]">次の日</a>
-[% start_date %]～[% end_date %]
+<a href="/[% next_month_of_year | format('%04d') %]/[% prev_month_of_month | format('%02d') %]">前の月</a> | 
+<a href="/[% next_month_of_year | format('%04d') %]/[% next_month_of_month | format('%02d') %]">次の月</a><br /><br />
+<a href="/[% next_day_of_year | format('%04d') %]/[% prev_day_of_month | format('%02d') %]/[% prev_day_of_day | format('%02d') %]">前の日</a> | 
+<a href="/[% next_day_of_year | format('%04d') %]/[% next_day_of_month | format('%02d') %]/[% next_day_of_day | format('%02d') %]">次の日</a><br /><br />
+<div id="number_of_characters">
     文字数<br />
     <div id="chart1" style="height:1500px;width:500px; "></div>
+</div>
 
+<div id="number_of_updates">
     更新回数<br />
     <div id="chart2" style="height:1500px;width:500px; "></div>
+</div>
 </body>
 </html>
