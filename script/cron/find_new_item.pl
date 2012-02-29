@@ -11,8 +11,8 @@ use Email::Send;
 use Email::MIME;
 use Data::Dumper;
 
-my $from = '';
-my $to   = '';
+my $from = 'hoge@example.com';
+my $to   = 'foo@example.com';
 my $url = 'http://shop.ske48.co.jp/';
 my $file_path = File::Spec->catfile(dirname(__FILE__), '../../data/new_item.dat');
 
